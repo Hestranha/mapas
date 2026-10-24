@@ -82,28 +82,30 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        if [ -f /data/data/peru.mbtiles ]; then
-          echo "==> /data/data/peru.mbtiles ya existe, omitiendo generacion."
+        if [ -d /data/data/peru.mbtiles ]; then
+          echo "==> /data/data/peru.mbtiles es un directorio, eliminando..."
+          rm -rf /data/data/peru.mbtiles
+        fi
+        MB_SIZE=$$(wc -c < /data/data/peru.mbtiles 2>/dev/null || echo 0)
+        MB_SIZE=$${MB_SIZE:-0}
+        if [ "$$MB_SIZE" -gt 10000000 ]; then
+          echo "==> /data/data/peru.mbtiles ya existe y es valido ($$MB_SIZE bytes), omitiendo generacion."
+          chmod 644 /data/data/peru.mbtiles 2>/dev/null || true
           exit 0
         fi
-        echo "==> Generando /data/data/peru.mbtiles con tilemaker..."
+        echo "==> /data/data/peru.mbtiles no existe o esta incompleto ($$MB_SIZE bytes). Iniciando tilemaker..."
+        rm -rf /data/data/peru.mbtiles /data/data/tmp-tilemaker
         mkdir -p /data/data /data/data/tmp-tilemaker
         PBF=$$(ls /data/*.osm.pbf 2>/dev/null | head -n 1)
-        if [ -z "$$PBF" ]; then
+        if [ -z "$$PBF" ] || [ ! -f "$$PBF" ]; then
           echo "ERROR: No se encontro ningun archivo .osm.pbf en /data" >&2
           exit 1
         fi
-        /usr/local/bin/tilemaker \
-          --input "$$PBF" \
-          --output /data/data/peru.mbtiles \
-          --config /data/tilemaker/config-peru.json \
-          --process /data/tilemaker/process-openmaptiles.lua \
-          --bbox "-83.2,-19.6,-68.0,1.2" \
-          --store /data/data/tmp-tilemaker \
-          --threads 0 \
-          --verbose
+        echo "==> Usando PBF: $$PBF"
+        /usr/local/bin/tilemaker           --input "$$PBF"           --output /data/data/peru.mbtiles           --config /data/tilemaker/config-peru.json           --process /data/tilemaker/process-openmaptiles.lua           --bbox "-83.2,-19.6,-68.0,1.2"           --store /data/data/tmp-tilemaker           --threads 0           --verbose
+        chmod 644 /data/data/peru.mbtiles 2>/dev/null || true
         rm -rf /data/data/tmp-tilemaker
-        echo "==> /data/data/peru.mbtiles generado exitosamente."
+        echo "==> /data/data/peru.mbtiles generado exitosamente: $$(ls -lh /data/data/peru.mbtiles)"
 
   # -------------------------------------------------------------- geocodificador
   photon:

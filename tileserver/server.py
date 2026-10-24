@@ -175,9 +175,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._not_found("tile fuera de rango")
         # MBTiles guarda las filas en orden TMS: tmsY = 2^z - 1 - y
         tms_y = n - 1 - y
-        row = db().execute(
-            "SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?",
-            (z, x, tms_y)).fetchone()
+        try:
+            row = db().execute(
+                "SELECT tile_data FROM tiles WHERE zoom_level=? AND tile_column=? AND tile_row=?",
+                (z, x, tms_y)).fetchone()
+        except sqlite3.Error as exc:
+            return self._json({"error": "mbtiles no disponible: %s" % exc}, 503)
         if not row or not row[0]:
             return self._send(204, b"", "application/vnd.mapbox-vector-tile")
         data = row[0]
@@ -252,8 +255,20 @@ class Handler(BaseHTTPRequestHandler):
                 {"error": "geocodificador no disponible: %s" % exc}, 502)
 
     def _health(self):
-        info = {"status": "ok", "mbtiles": MBTILES_PATH,
-                "photon": PHOTON_URL or None}
+        m_exists = os.path.exists(MBTILES_PATH)
+        dir_path = os.path.dirname(MBTILES_PATH) or "/data"
+        info = {
+            "status": "ok",
+            "mbtiles": MBTILES_PATH,
+            "photon": PHOTON_URL or None,
+            "fs": {
+                "exists": m_exists,
+                "is_file": os.path.isfile(MBTILES_PATH) if m_exists else False,
+                "is_dir": os.path.isdir(MBTILES_PATH) if m_exists else False,
+                "size_bytes": os.path.getsize(MBTILES_PATH) if m_exists else 0,
+                "data_contents": os.listdir(dir_path) if os.path.exists(dir_path) else [],
+            }
+        }
         try:
             info["tiles"] = db().execute(
                 "SELECT COUNT(*) FROM tiles").fetchone()[0]
