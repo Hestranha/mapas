@@ -42,13 +42,14 @@ services:
     environment:
       NOMINATIM_DATABASE_DSN: "postgresql://nominatim:nominatim@db:5432/nominatim"
       NOMINATIM_IMPORT_STYLE: "full"
-      PBF_FILE: "/data/peru-261020.osm.pbf"
+      PBF_FILE: "/data/peru-latest.osm.pbf"
+      PBF_URL: "https://download.geofabrik.de/south-america/peru-latest.osm.pbf"
       PGHOST: db
       PGPORT: "5432"
       PGUSER: nominatim
       FORCE_IMPORT: "${FORCE_IMPORT:-0}"
     volumes:
-      - ./:/data:ro
+      - ./:/data
       - nominatim-data:/data-env
 
   # ------------------------------------------------------ import Nominatim -> Photon
@@ -68,6 +69,41 @@ services:
       FORCE_IMPORT: "${FORCE_IMPORT:-0}"
     volumes:
       - photon-data:/opt/photon/photon_data
+
+  # ---------------------------------------------------- generador tiles vectoriales
+  tilemaker:
+    image: ghcr.io/systemed/tilemaker:master
+    restart: "no"
+    depends_on:
+      nominatim-import:
+        condition: service_completed_successfully
+    volumes:
+      - ./:/data
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -f /data/data/peru.mbtiles ]; then
+          echo "==> /data/data/peru.mbtiles ya existe, omitiendo generacion."
+          exit 0
+        fi
+        echo "==> Generando /data/data/peru.mbtiles con tilemaker..."
+        mkdir -p /data/data /data/data/tmp-tilemaker
+        PBF=$$(ls /data/*.osm.pbf 2>/dev/null | head -n 1)
+        if [ -z "$$PBF" ]; then
+          echo "ERROR: No se encontro ningun archivo .osm.pbf en /data" >&2
+          exit 1
+        fi
+        /usr/local/bin/tilemaker \
+          --input "$$PBF" \
+          --output /data/data/peru.mbtiles \
+          --config /data/tilemaker/config-peru.json \
+          --process /data/tilemaker/process-openmaptiles.lua \
+          --bbox "-83.2,-19.6,-68.0,1.2" \
+          --store /data/data/tmp-tilemaker \
+          --threads 0 \
+          --verbose
+        rm -rf /data/data/tmp-tilemaker
+        echo "==> /data/data/peru.mbtiles generado exitosamente."
 
   # -------------------------------------------------------------- geocodificador
   photon:
@@ -90,13 +126,16 @@ services:
     build: ./tileserver
     restart: unless-stopped
     depends_on:
-      - photon
+      photon:
+        condition: service_started
+      tilemaker:
+        condition: service_completed_successfully
     environment:
       MBTILES_PATH: /data/peru.mbtiles
       PHOTON_URL: http://photon:2322
       PORT: "8080"
     volumes:
-      - ./data/peru.mbtiles:/data/peru.mbtiles:ro
+      - ./data:/data:ro
     ports:
       - "8080:8080"
 
