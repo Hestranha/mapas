@@ -1,0 +1,34 @@
+# Overrides para desplegar en un VPS.
+# NO se usa en local: el stack local sigue con el docker-compose.yml original.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.vps.yml up -d
+#
+# Requiere Docker Compose v2.24+ (soporta la etiqueta !override).
+# Cambios frente al compose base:
+#   1. La base de datos deja de publicarse en el host (solo red interna de Docker).
+#   2. Los bind-mounts llevan ":z" para SELinux (RHEL/Rocky/Alma). En Ubuntu/Debian
+#      la etiqueta se ignora, no cambia nada.
+#   3. El servidor de mapa arranca YA (no espera al import del geocodificador),
+#      de modo que los tiles se sirven mientras Nominatim/Photon importan.
+
+services:
+  db:
+    ports: !override []
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+  nominatim-import:
+    volumes:
+      - ./:/data:ro,z
+      - nominatim-data:/data-env
+
+  photon:
+    # solo accesible desde el propio VPS (usa un tunel SSH para probarlo desde tu PC)
+    ports: !override ["127.0.0.1:2322:2322"]
+
+  tileserver:
+    depends_on:
+      photon:
+        condition: service_started
+    volumes:
+      - ./data/peru.mbtiles:/data/peru.mbtiles:ro,z

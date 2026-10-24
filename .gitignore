@@ -1,0 +1,27 @@
+# Datos geoespaciales pesados (se regeneran con scripts/01 y 02)
+*.osm.pbf
+*.mbtiles
+*.tar.gz
+
+# Paquete generado para el VPS (copia completa + imagen Docker)
+/dist/vps/
+
+# Datos temporales de tilemaker
+/data/tmp-tilemaker/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Entorno y logs
+.env
+*.log
+
+# SO / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

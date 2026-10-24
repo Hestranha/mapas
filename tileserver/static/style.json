@@ -1,0 +1,872 @@
+{
+ "version": 8,
+ "name": "Perú OSM (OpenMapTiles)",
+ "metadata": {
+  "openmaptiles:version": "3.15",
+  "openmaptiles:layers": [
+   "place",
+   "boundary",
+   "poi",
+   "housenumber",
+   "waterway",
+   "transportation",
+   "transportation_name",
+   "building",
+   "water",
+   "ocean",
+   "water_name",
+   "aeroway",
+   "aerodrome_label",
+   "park",
+   "landuse",
+   "landcover",
+   "mountain_peak"
+  ]
+ },
+ "center": [
+  -75.0152,
+  -9.19
+ ],
+ "zoom": 5,
+ "bearing": 0,
+ "pitch": 0,
+ "sources": {
+  "peru": {
+   "type": "vector",
+   "tiles": [
+    "/tiles/{z}/{x}/{y}.pbf"
+   ],
+   "minzoom": 0,
+   "maxzoom": 14,
+   "attribution": "<a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a>"
+  }
+ },
+ "sprite": "",
+ "glyphs": "/glyphs/{fontstack}/{range}.pbf",
+ "layers": [
+  {
+   "id": "background",
+   "type": "background",
+   "paint": {
+    "background-color": "#f7f3ef"
+   }
+  },
+  {
+   "id": "landcover",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "landcover",
+   "paint": {
+    "fill-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "wood",
+     "#cfe0bd",
+     "grass",
+     "#dfe9c9",
+     "farmland",
+     "#ece5d2",
+     "sand",
+     "#f3ecdc",
+     "wetland",
+     "#d7e6d2",
+     "rock",
+     "#dedcd6",
+     "ice",
+     "#eef4f7",
+     "#f7f3ef"
+    ],
+    "fill-opacity": 0.9
+   }
+  },
+  {
+   "id": "landuse",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "landuse",
+   "paint": {
+    "fill-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "residential",
+     "#e6e4e1",
+     "commercial",
+     "#f3e3cc",
+     "retail",
+     "#f4e0d9",
+     "industrial",
+     "#e5e0dd",
+     "hospital",
+     "#f4dde2",
+     "school",
+     "#eae0ee",
+     "university",
+     "#eae0ee",
+     "kindergarten",
+     "#eae0ee",
+     "cemetery",
+     "#dde4ca",
+     "military",
+     "#e5e0dd",
+     "airfield",
+     "#e2e0dc",
+     "railway",
+     "#e3e0dd",
+     "quarry",
+     "#dbd9d4",
+     "farmland",
+     "#ece5d2",
+     "allotments",
+     "#dbe6c8",
+     "orchard",
+     "#d9e8c4",
+     "vineyard",
+     "#dce7c6",
+     "meadow",
+     "#dfe9c9",
+     "grass",
+     "#dfe9c9",
+     "park",
+     "#d9e8c4",
+     "garden",
+     "#dbe8c8",
+     "golf_course",
+     "#cfe4c6",
+     "pitch",
+     "#d6e8c6",
+     "playground",
+     "#d6e8c6",
+     "stadium",
+     "#d6e8c6",
+     "pedestrian",
+     "#eee9e2",
+     "village_green",
+     "#d9e8c4",
+     "bus_station",
+     "#e8e4de",
+     "port",
+     "#c9dbe6",
+     "beach",
+     "#f3ecdc",
+     "#f7f3ef"
+    ],
+    "fill-opacity": 0.85
+   }
+  },
+  {
+   "id": "park",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "park",
+   "paint": {
+    "fill-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "national_park",
+     "#cfe4c4",
+     "protected_area",
+     "#d6e7c4",
+     "nature_reserve",
+     "#d6e7c4",
+     "park",
+     "#d6e7c4",
+     "garden",
+     "#dbe8c8",
+     "golf_course",
+     "#cfe4c6",
+     "picnic_area",
+     "#dbe8c8",
+     "playground",
+     "#d6e8c6",
+     "stadium",
+     "#d6e8c6",
+     "allotments",
+     "#dbe6c8",
+     "cemetery",
+     "#dde4ca",
+     "#dbe8c8"
+    ],
+    "fill-opacity": 0.9
+   }
+  },
+  {
+   "id": "ocean",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "ocean",
+   "paint": {
+    "fill-color": "#a9c9df",
+    "fill-opacity": 1.0
+   }
+  },
+  {
+   "id": "water",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "water",
+   "paint": {
+    "fill-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "lake",
+     "#a9c9df",
+     "reservoir",
+     "#a9c9df",
+     "pond",
+     "#a9c9df",
+     "river",
+     "#a9c9df",
+     "swimming_pool",
+     "#a9c9df",
+     "basin",
+     "#a9c9df",
+     "#a9c9df"
+    ],
+    "fill-opacity": 1.0
+   }
+  },
+  {
+   "id": "waterway",
+   "type": "line",
+   "source": "peru",
+   "source-layer": "waterway",
+   "paint": {
+    "line-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "river",
+     "#a9c9df",
+     "canal",
+     "#a9c9df",
+     "stream",
+     "#a9c9df",
+     "drain",
+     "#a9c9df",
+     "ditch",
+     "#a9c9df",
+     "#a9c9df"
+    ],
+    "line-width": [
+     "interpolate",
+     [
+      "linear"
+     ],
+     [
+      "zoom"
+     ],
+     8,
+     0.6,
+     12,
+     1.2,
+     14,
+     2.5
+    ],
+    "line-opacity": 1.0
+   },
+   "minzoom": 8
+  },
+  {
+   "id": "building",
+   "type": "fill",
+   "source": "peru",
+   "source-layer": "building",
+   "paint": {
+    "fill-color": "#ddd8d0",
+    "fill-opacity": 0.9
+   },
+   "minzoom": 13
+  },
+  {
+   "id": "road_casing",
+   "type": "line",
+   "source": "peru",
+   "source-layer": "transportation",
+   "paint": {
+    "line-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "motorway",
+     "#c9c2b8",
+     "trunk",
+     "#c9c2b8",
+     "primary",
+     "#d3ccc2",
+     "secondary",
+     "#d3ccc2",
+     "tertiary",
+     "#d8d2c9",
+     "#ded8cf"
+    ],
+    "line-width": [
+     "interpolate",
+     [
+      "linear"
+     ],
+     [
+      "zoom"
+     ],
+     8,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      2.0,
+      "trunk",
+      1.5,
+      "primary",
+      1.1,
+      "secondary",
+      0.8,
+      "tertiary",
+      0.55,
+      "minor",
+      0.35,
+      "service",
+      0.25,
+      "path",
+      0.2,
+      "track",
+      0.2,
+      "rail",
+      0.4,
+      "ferry",
+      0.4,
+      "aeroway",
+      0.3,
+      0.25
+     ],
+     12,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      4.0,
+      "trunk",
+      3.0,
+      "primary",
+      2.2,
+      "secondary",
+      1.6,
+      "tertiary",
+      1.1,
+      "minor",
+      0.7,
+      "service",
+      0.5,
+      "path",
+      0.4,
+      "track",
+      0.4,
+      "rail",
+      0.8,
+      "ferry",
+      0.8,
+      "aeroway",
+      0.6,
+      0.5
+     ],
+     16,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      6.4,
+      "trunk",
+      4.8,
+      "primary",
+      3.52,
+      "secondary",
+      2.56,
+      "tertiary",
+      1.76,
+      "minor",
+      1.12,
+      "service",
+      0.8,
+      "path",
+      0.64,
+      "track",
+      0.64,
+      "rail",
+      1.28,
+      "ferry",
+      1.28,
+      "aeroway",
+      0.96,
+      0.8
+     ]
+    ],
+    "line-opacity": 1.0
+   },
+   "minzoom": 4
+  },
+  {
+   "id": "road",
+   "type": "line",
+   "source": "peru",
+   "source-layer": "transportation",
+   "paint": {
+    "line-color": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "motorway",
+     "#f7b267",
+     "trunk",
+     "#f7b267",
+     "primary",
+     "#ffffff",
+     "secondary",
+     "#ffffff",
+     "tertiary",
+     "#ffffff",
+     "minor",
+     "#ffffff",
+     "service",
+     "#f2efe9",
+     "path",
+     "#c8b9a4",
+     "track",
+     "#c8b9a4",
+     "rail",
+     "#b5b1ab",
+     "ferry",
+     "#8fbcd8",
+     "aeroway",
+     "#d9d4cc",
+     "#f2efe9"
+    ],
+    "line-width": [
+     "interpolate",
+     [
+      "linear"
+     ],
+     [
+      "zoom"
+     ],
+     8,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      2.0,
+      "trunk",
+      1.5,
+      "primary",
+      1.1,
+      "secondary",
+      0.8,
+      "tertiary",
+      0.55,
+      "minor",
+      0.35,
+      "service",
+      0.25,
+      "path",
+      0.2,
+      "track",
+      0.2,
+      "rail",
+      0.4,
+      "ferry",
+      0.4,
+      "aeroway",
+      0.3,
+      0.25
+     ],
+     12,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      4.0,
+      "trunk",
+      3.0,
+      "primary",
+      2.2,
+      "secondary",
+      1.6,
+      "tertiary",
+      1.1,
+      "minor",
+      0.7,
+      "service",
+      0.5,
+      "path",
+      0.4,
+      "track",
+      0.4,
+      "rail",
+      0.8,
+      "ferry",
+      0.8,
+      "aeroway",
+      0.6,
+      0.5
+     ],
+     16,
+     [
+      "match",
+      [
+       "get",
+       "class"
+      ],
+      "motorway",
+      6.4,
+      "trunk",
+      4.8,
+      "primary",
+      3.52,
+      "secondary",
+      2.56,
+      "tertiary",
+      1.76,
+      "minor",
+      1.12,
+      "service",
+      0.8,
+      "path",
+      0.64,
+      "track",
+      0.64,
+      "rail",
+      1.28,
+      "ferry",
+      1.28,
+      "aeroway",
+      0.96,
+      0.8
+     ]
+    ],
+    "line-opacity": 1.0
+   },
+   "minzoom": 4
+  },
+  {
+   "id": "boundary",
+   "type": "line",
+   "source": "peru",
+   "source-layer": "boundary",
+   "paint": {
+    "line-color": "#9e9ac8",
+    "line-width": [
+     "interpolate",
+     [
+      "linear"
+     ],
+     [
+      "zoom"
+     ],
+     4,
+     0.6,
+     10,
+     1.4
+    ],
+    "line-opacity": 1.0,
+    "line-dasharray": [
+     2,
+     2
+    ]
+   },
+   "minzoom": 4
+  },
+  {
+   "id": "place_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "place",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": [
+     "match",
+     [
+      "get",
+      "class"
+     ],
+     "country",
+     16,
+     "state",
+     13,
+     "city",
+     13,
+     "town",
+     12,
+     "village",
+     11,
+     "hamlet",
+     10,
+     "suburb",
+     11,
+     "neighbourhood",
+     10,
+     "locality",
+     10,
+     "island",
+     10,
+     10
+    ],
+    "text-transform": "none",
+    "text-letter-spacing": 0.1
+   },
+   "paint": {
+    "text-color": "#3a3a3a",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.4
+   }
+  },
+  {
+   "id": "road_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "transportation_name",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ],
+     [
+      "get",
+      "ref"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": [
+     "interpolate",
+     [
+      "linear"
+     ],
+     [
+      "zoom"
+     ],
+     10,
+     8,
+     14,
+     11,
+     16,
+     12
+    ],
+    "symbol-placement": "line",
+    "symbol-spacing": 300
+   },
+   "minzoom": 10,
+   "paint": {
+    "text-color": "#5b564e",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.2
+   }
+  },
+  {
+   "id": "water_name",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "water_name",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": 11
+   },
+   "minzoom": 11,
+   "paint": {
+    "text-color": "#3d6e91",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.2
+   }
+  },
+  {
+   "id": "poi_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "poi",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": 10,
+    "text-anchor": "top",
+    "text-offset": [
+     0,
+     0.6
+    ]
+   },
+   "minzoom": 13,
+   "paint": {
+    "text-color": "#4a4a4a",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.2
+   }
+  },
+  {
+   "id": "mountain_peak_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "mountain_peak",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": 10,
+    "text-anchor": "top",
+    "text-offset": [
+     0,
+     0.6
+    ]
+   },
+   "minzoom": 12,
+   "paint": {
+    "text-color": "#6b5333",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.2
+   }
+  },
+  {
+   "id": "aerodrome_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "aerodrome_label",
+   "layout": {
+    "text-field": [
+     "coalesce",
+     [
+      "get",
+      "name:latin"
+     ],
+     [
+      "get",
+      "name"
+     ],
+     [
+      "get",
+      "iata"
+     ]
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": 10,
+    "text-anchor": "top",
+    "text-offset": [
+     0,
+     0.6
+    ]
+   },
+   "minzoom": 11,
+   "paint": {
+    "text-color": "#5a5a5a",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.2
+   }
+  },
+  {
+   "id": "housenumber_labels",
+   "type": "symbol",
+   "source": "peru",
+   "source-layer": "housenumber",
+   "layout": {
+    "text-field": [
+     "get",
+     "housenumber"
+    ],
+    "text-font": [
+     "Noto Sans Regular"
+    ],
+    "text-size": 8
+   },
+   "minzoom": 14,
+   "paint": {
+    "text-color": "#8a8a8a",
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1
+   }
+  }
+ ]
+}

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa de Perú · Tiles + Geocodificación</title>
+  <link rel="stylesheet" href="/static/maplibre-gl.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; }
+    #search {
+      position: absolute; top: 12px; left: 12px; z-index: 10; width: 380px;
+      background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.25); padding: 8px;
+    }
+    #search input {
+      width: 100%; padding: 9px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none;
+    }
+    #filters { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    #filters button {
+      font-size: 11px; padding: 3px 8px; border: 1px solid #d5d5d5; background: #fafafa;
+      border-radius: 10px; cursor: pointer; color: #444;
+    }
+    #filters button.on { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+    #results { list-style: none; margin: 6px 0 0; padding: 0; max-height: 320px; overflow: auto; }
+    #results li { padding: 7px 9px; font-size: 13px; cursor: pointer; border-radius: 5px; }
+    #results li:hover { background: #eef3f8; }
+    #results li small { display: block; color: #777; font-size: 11px; }
+    #results li em { color: #9aa0a6; font-style: normal; font-size: 11px; }
+    #hint { font-size: 11px; color: #666; margin-top: 6px; }
+    #status { position: absolute; bottom: 10px; left: 12px; z-index: 10; background: rgba(255,255,255,.9);
+              padding: 5px 9px; border-radius: 6px; font-size: 11px; color: #444; }
+    .pin {
+      width: 26px; height: 26px; border-radius: 50% 50% 50% 0; background: #d93025;
+      border: 2px solid #fff; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,.4);
+      animation: drop .35s ease-out;
+    }
+    .pin::after {
+      content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      background: #fff; left: 7px; top: 7px;
+    }
+    @keyframes drop {
+      from { transform: rotate(-45deg) translate(0, -22px) scale(.6); opacity: .2; }
+      to   { transform: rotate(-45deg) translate(0, 0) scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="search">
+    <input id="q" type="search" placeholder="Escribe un lugar (ej. Lima, Cusco, Machu Picchu)" autocomplete="off" />
+    <div id="filters">
+      <button data-layers="" class="on">Todo</button>
+      <button data-layers="city,state,county,country">Ciudades</button>
+      <button data-layers="district,locality">Barrios</button>
+      <button data-layers="street">Calles</button>
+      <button data-layers="house">Direcciones</button>
+      <button data-layers="other">Lugares (POI)</button>
+    </div>
+    <ul id="results"></ul>
+    <div id="hint">Geocodificación (autocompletado) servida por Photon · Tiles por MVT/OpenMapTiles</div>
+  </div>
+  <div id="status">cargando…</div>
+
+  <script src="/static/maplibre-gl.js"></script>
+  <script>
+    function vistaDelHash() {
+      const m = /#(-?[\d.]+)\/(-?[\d.]+)\/([\d.]+)/.exec(location.hash || '');
+      if (!m) return null;
+      return { center: [parseFloat(m[1]), parseFloat(m[2])], zoom: parseFloat(m[3]) };
+    }
+
+    const inicial = vistaDelHash() || { center: [-75.0152, -9.19], zoom: 5 };
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: '/style.json',
+      center: inicial.center,
+      zoom: inicial.zoom
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }));
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }));
+    window.__map = map;
+
+    // enlace profundo: #lon/lat/zoom
+    map.on('moveend', () => {
+      const c = map.getCenter();
+      const h = `#${c.lng.toFixed(5)}/${c.lat.toFixed(5)}/${map.getZoom().toFixed(2)}`;
+      if (location.hash !== h) history.replaceState(null, '', h);
+    });
+
+    map.on('error', (e) => console.error('Mapa:', (e.error && e.error.message) || e.error));
+    map.on('load', () => {
+      console.log('Mapa: estilo cargado');
+      fetch('/health').then(r => r.json()).then(h => {
+        document.getElementById('status').textContent =
+          `tiles: ${h.tiles ?? '-'} · zooms ${(h.zoom_levels || []).join(',')} · geocoder: ${h.geocoder || 'sin configurar'}`;
+      }).catch(() => {});
+    });
+
+    // geocodificacion inversa: al hacer clic en el mapa se muestra la direccion
+    map.on('click', async (e) => {
+      const p = e.lngLat;
+      try {
+        const res = await fetch(`/reverse?lat=${p.lat.toFixed(6)}&lon=${p.lng.toFixed(6)}`);
+        const data = await res.json();
+        const f = (data.features || [])[0];
+        if (!f) return;
+        const q = f.properties || {};
+        const partes = [];
+        if (q.name) partes.push(`<b>${esc(q.name)}</b>`);
+        if (q.street) partes.push(`${esc(q.street)}${q.housenumber ? ' ' + esc(q.housenumber) : ''}`);
+        [q.district, q.city, q.county, q.state, q.country].forEach(v => { if (v && !partes.includes(v)) partes.push(esc(v)); });
+        new maplibregl.Popup({ offset: 12 })
+          .setLngLat([p.lng, p.lat])
+          .setHTML(`<div style="font-size:12px;line-height:1.45">${partes.join('<br>')}</div>`)
+          .addTo(map);
+      } catch (_) { /* sin popup */ }
+    });
+
+    const input = document.getElementById('q');
+    const list = document.getElementById('results');
+    let timer = null;
+    let layers = '';
+
+    document.getElementById('filters').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button');
+      if (!btn) return;
+      document.querySelectorAll('#filters button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      layers = btn.dataset.layers;
+      if (input.value.trim().length >= 3) search();
+    });
+
+    const TYPE_ES = {
+      city: 'ciudad', state: 'departamento', county: 'provincia', country: 'país',
+      district: 'distrito', locality: 'localidad', street: 'calle', house: 'dirección', other: 'lugar'
+    };
+
+    // jerarquia: los lugares poblados deben ir antes que calles y POI
+    const PESO = { city: 3, state: 3, country: 3, county: 2.5, district: 1.4, locality: 1.4, street: 1.2, house: 1, other: 1 };
+
+    function norm(s) {
+      return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    function puntuar(f, consulta) {
+      const p = f.properties || {};
+      const n = norm(p.name);
+      const c = norm(consulta);
+      if (!n || !c) return 0;
+      let m = 0;
+      if (n === c) m = 1;
+      else if (n.startsWith(c)) m = 0.8;
+      else if (n.includes(c)) m = 0.6;
+      else return 0;
+      return (PESO[p.type] || 1) * m * 100;
+    }
+
+    function contexto(p) {
+      return [p.city, p.county, p.state, p.country].filter(Boolean).join(' · ');
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // pin unico: al elegir un resultado se quita el anterior y se pone el nuevo
+    let pin = null;
+
+    function centro(f) {
+      const g = f.geometry || {};
+      if (g.type === 'Point') return [g.coordinates[0], g.coordinates[1]];
+      if (Array.isArray(g.coordinates)) {
+        // poligono: centroide del anillo exterior
+        const anillos = g.type === 'Polygon' ? g.coordinates : (g.coordinates[0] || []);
+        const anillo = anillos[0] || [];
+        if (anillo.length) {
+          const lons = anillo.map(c => c[0]), lats = anillo.map(c => c[1]);
+          return [lons.reduce((a, b) => a + b, 0) / lons.length, lats.reduce((a, b) => a + b, 0) / lats.length];
+        }
+      }
+      const ext = (f.properties || {}).extent;
+      if (Array.isArray(ext) && ext.length === 4) {
+        return [(ext[0] + ext[2]) / 2, (ext[1] + ext[3]) / 2];
+      }
+      return null;
+    }
+
+    function ponerPin(lngLat) {
+      if (!lngLat) return;
+      if (pin) { pin.remove(); pin = null; }
+      const el = document.createElement('div');
+      el.className = 'pin';
+      pin = new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat(lngLat).addTo(map);
+    }
+
+    function render(features, consulta) {
+      list.innerHTML = '';
+      if (!features.length) {
+        list.innerHTML = '<li><em>Sin resultados</em></li>';
+        return;
+      }
+      const ordenados = features
+        .map((f, i) => ({ f, i, s: puntuar(f, consulta) }))
+        .sort((a, b) => (b.s - a.s) || (a.i - b.i))
+        .map(x => x.f);
+      ordenados.forEach(f => {
+        const li = document.createElement('li');
+        const p = f.properties || {};
+        const tipo = TYPE_ES[p.type] || p.osm_value || 'lugar';
+        const nombre = esc(p.name || '(sin nombre)');
+        const extra = p.housenumber ? ` ${esc(p.housenumber)}` : '';
+        li.innerHTML = `${nombre}${extra} <em>${esc(tipo)}</em><small>${esc(contexto(p))}</small>`;
+        li.onclick = () => {
+          const c = centro(f);
+          if (c) ponerPin(c);
+          map.flyTo({ center: c || map.getCenter(), zoom: 15, duration: 1600, maxDuration: 2500 });
+          list.innerHTML = '';
+        };
+        list.appendChild(li);
+      });
+    }
+
+    async function search() {
+      const q = input.value.trim();
+      if (q.length < 3) { list.innerHTML = ''; return; }
+      // sesgo por proximidad: prioriza lo que esta mas cerca del centro del mapa
+      const c = map.getCenter();
+      const params = new URLSearchParams({ q, limit: '10', lang: 'es' });
+      if (layers) layers.split(',').forEach(l => params.append('layer', l));
+      if (c) { params.set('lat', c.lat.toFixed(4)); params.set('lon', c.lng.toFixed(4)); }
+      try {
+        const res = await fetch(`/geocode?${params.toString()}`);
+        const data = await res.json();
+        if (data.error) { list.innerHTML = `<li><em>${data.error}</em></li>`; return; }
+        render(data.features || [], q);
+      } catch (e) {
+        list.innerHTML = '<li><em>Error al consultar el geocodificador</em></li>';
+      }
+    }
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 3) { list.innerHTML = ''; return; }
+      timer = setTimeout(search, 250);
+    });
+  </script>
+</body>
+</html>

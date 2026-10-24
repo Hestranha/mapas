@@ -1,0 +1,106 @@
+services:
+  # ---------------------------------------------------------------- base de datos
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nominatim
+      POSTGRES_PASSWORD: nominatim
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=2GB
+      - -c
+      - maintenance_work_mem=1GB
+      - -c
+      - work_mem=64MB
+      - -c
+      - synchronous_commit=off
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - random_page_cost=1.0
+    shm_size: 2gb
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nominatim -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # ------------------------------------------------- import OSM -> Nominatim (1 vez)
+  nominatim-import:
+    image: mapas-nominatim:5.3.3
+    build: ./geocoder/nominatim
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NOMINATIM_DATABASE_DSN: "postgresql://nominatim:nominatim@db:5432/nominatim"
+      NOMINATIM_IMPORT_STYLE: "full"
+      PBF_FILE: "/data/peru-261020.osm.pbf"
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: nominatim
+      FORCE_IMPORT: "${FORCE_IMPORT:-0}"
+    volumes:
+      - ./:/data:ro
+      - nominatim-data:/data-env
+
+  # ------------------------------------------------------ import Nominatim -> Photon
+  photon-import:
+    image: mapas-photon:1.3.0
+    build: ./geocoder/photon
+    restart: "no"
+    command: ["import"]
+    depends_on:
+      nominatim-import:
+        condition: service_completed_successfully
+    environment:
+      PHOTON_HOST: db
+      PHOTON_DB: nominatim
+      PHOTON_USER: nominatim
+      PHOTON_PASSWORD: nominatim
+      FORCE_IMPORT: "${FORCE_IMPORT:-0}"
+    volumes:
+      - photon-data:/opt/photon/photon_data
+
+  # -------------------------------------------------------------- geocodificador
+  photon:
+    image: mapas-photon:1.3.0
+    build: ./geocoder/photon
+    restart: unless-stopped
+    depends_on:
+      photon-import:
+        condition: service_completed_successfully
+    environment:
+      PHOTON_LISTEN_PORT: "2322"
+    volumes:
+      - photon-data:/opt/photon/photon_data
+    ports:
+      - "2322:2322"
+
+  # ------------------------------------------------------------- servidor de mapa
+  tileserver:
+    image: mapas-tileserver:1.0.0
+    build: ./tileserver
+    restart: unless-stopped
+    depends_on:
+      - photon
+    environment:
+      MBTILES_PATH: /data/peru.mbtiles
+      PHOTON_URL: http://photon:2322
+      PORT: "8080"
+    volumes:
+      - ./data/peru.mbtiles:/data/peru.mbtiles:ro
+    ports:
+      - "8080:8080"
+
+volumes:
+  dbdata:
+  nominatim-data:
+  photon-data:
