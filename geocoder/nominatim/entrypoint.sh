@@ -15,8 +15,17 @@ cd "$PROJECT_DIR"
 case "${1:-import}" in
   import)
     if [ ! -f "$PBF_FILE" ]; then
-      echo "ERROR: no existe el PBF $PBF_FILE" >&2
-      exit 1
+      EXISTING_PBF=$(ls /data/*.osm.pbf 2>/dev/null | head -n 1 || true)
+      if [ -n "$EXISTING_PBF" ] && [ -f "$EXISTING_PBF" ]; then
+        PBF_FILE="$EXISTING_PBF"
+        echo "==> Usando archivo PBF existente: $PBF_FILE"
+      else
+        PBF_URL="${PBF_URL:-https://download.geofabrik.de/south-america/peru-latest.osm.pbf}"
+        echo "==> PBF no encontrado en $PBF_FILE. Descargando automaticamente desde $PBF_URL..."
+        mkdir -p "$(dirname "$PBF_FILE")"
+        curl -fL --retry 5 --retry-delay 3 -o "$PBF_FILE" "$PBF_URL"
+        echo "==> Descarga completada exitosamente: $(ls -lh "$PBF_FILE")"
+      fi
     fi
     echo "==> Importando $PBF_FILE en $NOMINATIM_DATABASE_DSN"
     echo "==> estilo de import: $NOMINATIM_IMPORT_STYLE"
